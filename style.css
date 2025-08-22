@@ -519,7 +519,7 @@ select.form-control {
 }
 
 [data-color-scheme="light"] select.form-control {
-  background-image: var(--select-caret-light);
+  background-image: var(--select-caret-dark);
 }
 
 .form-control:focus {
