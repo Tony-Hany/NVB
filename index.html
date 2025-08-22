@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" data-color-scheme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Startup Financial Projections Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+<header class="header" id="mainHeader">
+  <div class="container">
+    <div class="header__bar" style="position: relative; display: flex; justify-content: center; align-items: center; height: 160px; transition: height 0.3s ease;">
+      
+      <!-- Centered Logo -->
+      <div class="logo-wrapper" id="logoContainer" style="position: absolute; left: 50%; transform: translateX(-50%); top: 50%; transform: translate(-50%, -50%);">
+        <img src="assets/logo.png" alt="Neurovia Logo" class="neurovia-logo" id="logoImage" style="height: 50px; transition: height 0.3s ease;">
+      </div>
+
+      <!-- Right Controls -->
+      <div style="margin-left: auto; display: flex; align-items: center; gap: 1rem;">
+        <button id="themeToggle" class="btn btn--secondary" aria-label="Toggle theme">
+          <span id="themeIcon">🌙</span>
+        </button>
+        <button id="currencyToggle" class="btn btn--outline" title="Switch currency">USD</button>
+<div class="export-controls" id="exportButtons">
+  <button id="exportPDF" class="btn btn--primary">Export PDF</button>
+  <button id="exportPNG" class="btn btn--outline">Export PNG</button>
+</div>
+      </div>
+    </div>
+  </div>
+</header>
+
+
+    <div class="container">
+      <!-- Investor Instructions -->
+      <div id="xlsxFallback" style="display:none; margin: 1rem 0; padding: 0.75rem; border: 1px dashed var(--color-border); border-radius: 12px;"><strong>Projections.xlsx</strong> not found. Please <label for="xlsxInput" style="text-decoration: underline; cursor: pointer;">choose a file</label> to load data. <input id="xlsxInput" type="file" accept=".xlsx" style="display:none" /></div>
+<div class="scenario-intro">
+        <h2 class="scenario-headline">Explore Your Impact</h2>
+        <p class="scenario-subtext">
+          Select a funding scenario to see how your capital drives progress — from preclinical breakthroughs to clinical readiness.
+        </p>
+      </div>
+
+      <!-- Scenario Tabs -->
+      <div class="scenario-tabs">
+        <div class="tabs" id="scenarioTabs">
+          <button class="tab tab--active" data-scenario="lean">Lean Plan<span class="tab__amount">$1.2M</span></button>
+          <button class="tab" data-scenario="core">Core Plan<span class="tab__amount">$2.5M</span></button>
+          <button class="tab" data-scenario="accelerated">Accelerated Plan<span class="tab__amount">$4.0M</span></button>
+        </div>
+      </div>
+		
+
+      <!-- Main Dashboard -->
+      <div class="dashboard" id="dashboard">
+        <!-- Overview -->
+        <div class="dashboard__overview">
+                    <div class="overview-card"><h3>Amount to Raise</h3><div class="overview-card__value" id="toRaise">—</div></div>
+<div class="overview-card"><h3>Total Funding</h3><div class="overview-card__value" id="totalFunding">$1,200,000</div></div>
+          <div class="overview-card"><h3>Monthly Burn</h3><div class="overview-card__value" id="monthlyBurn">$100,000</div></div>
+          <div class="overview-card"><h3>Runway</h3><div class="overview-card__value" id="runway">12 months</div></div>
+          <div class="overview-card"><h3>Milestones</h3><div class="overview-card__value" id="milestoneCount">4</div></div>
+        </div>
+
+        <!-- Milestones + Pie Chart -->
+        <div style="display: flex; gap: 2rem; margin-top: 2rem;">
+          <!-- Milestones -->
+          <div class="dashboard__milestones" style="flex: 1;">
+            <div class="milestones-header"><h3>Milestones</h3></div>
+            <div class="milestones-list" id="milestonesList"></div>
+          </div>
+
+          <!-- Budget Allocation Chart -->
+          <div class="chart-container" style="flex: 1;">
+            <div class="chart-header">
+              <h3>Budget Allocation</h3>
+              <button class="chart-export" data-chart="allocation">📊</button>
+            </div>
+            <div class="chart-wrapper">
+              <canvas id="allocationChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Categories -->
+        <div class="dashboard__categories">
+          <div class="categories-header">
+            <h3>Spending Categories</h3>
+            <div class="categories-toggle">
+              <button class="toggle-btn toggle-btn--active" data-view="total">Total</button>
+              <button class="toggle-btn" data-view="monthly">Monthly</button>
+            </div>
+          </div>
+          <div class="categories-grid" id="categoriesGrid"></div>
+        </div>
+
+        <!-- Other Charts -->
+        <div class="dashboard__charts">
+          <div class="chart-container">
+            <div class="chart-header"><h3>Cash Burn Over Time</h3><button class="chart-export" data-chart="burn">📈</button></div>
+            <div class="chart-wrapper"><canvas id="burnChart"></canvas></div>
+          </div>
+
+          <div class="chart-container">
+            <div class="chart-header"><h3>Cash on Hand</h3><button class="chart-export" data-chart="cash">💰</button></div>
+            <div class="chart-wrapper"><canvas id="cashChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scenario Modal -->
+    <div class="modal" id="addScenarioModal">
+      <div class="modal__backdrop"></div>
+      <div class="modal__content">
+        <div class="modal__header">
+          <h3>Add Custom Scenario</h3>
+          <button class="modal__close" id="closeModal">&times;</button>
+        </div>
+        <div class="modal__body">
+          <div class="form-group"><label class="form-label">Scenario Name</label><input type="text" class="form-control" id="newScenarioName" placeholder="e.g., Growth Plan"></div>
+          <div class="form-group"><label class="form-label">Total Funding ($)</label><input type="number" class="form-control" id="newScenarioFunding" placeholder="e.g., 3000000"></div>
+        </div>
+        <div class="modal__footer"><button class="btn btn--outline" id="cancelScenario">Cancel</button><button class="btn btn--primary" id="createScenario">Create Scenario</button></div>
+      </div>
+    </div>
+
+    <!-- Milestone Modal -->
+    <div class="modal" id="addMilestoneModal">
+      <div class="modal__backdrop"></div>
+      <div class="modal__content">
+        <div class="modal__header"><h3>Add Milestone</h3><button class="modal__close" id="closeMilestoneModal">&times;</button></div>
+        <div class="modal__body">
+          <div class="form-group"><label class="form-label">Milestone Name</label><input type="text" class="form-control" id="newMilestoneName" placeholder="e.g., Complete FDA submission"></div>
+          <div class="form-group"><label class="form-label">Target Month</label><input type="number" class="form-control" id="newMilestoneMonth" placeholder="e.g., 12" min="1" max="60"></div>
+        </div>
+        <div class="modal__footer"><button class="btn btn--outline" id="cancelMilestone">Cancel</button><button class="btn btn--primary" id="createMilestone">Add Milestone</button></div>
+      </div>
+    </div>
+
+    <!-- Category Modal -->
+    <div id="categoryModal" class="modal__backdrop" style="display: none;">
+      <div class="modal__content">
+        <button id="closeCategoryModal" class="modal__close">✖</button>
+        <h2 id="modalCategoryTitle"></h2>
+        <div id="modalCategoryDetails">
+          <p>This will be filled dynamically.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
